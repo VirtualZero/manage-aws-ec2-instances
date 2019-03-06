@@ -15,33 +15,30 @@ ec2 = boto3.client(
 
 
 def get_ec2_info():
-    spinner = Halo(
+    with Halo(
         text='Requesting EC2 Information...',
         spinner='dots',
         text_color='white',
         color='green'
-    )
-    spinner.start()
+    ) as spinner:
 
-    with open('ec2_info.json', 'w') as info_file:
-        info_file.write(
-            json.dumps(
-                ec2.describe_instances(),
-                indent=4,
-                sort_keys=True,
-                default=str
+        with open('ec2_info.json', 'w') as info_file:
+            info_file.write(
+                json.dumps(
+                    ec2.describe_instances(),
+                    indent=4,
+                    sort_keys=True,
+                    default=str
+                )
             )
-        )
 
-    spinner.stop()
+            unicode_chars = '\n\u2714 '
+            saved_file_message = f'{colored(unicode_chars, "green")}'\
+                f'Your AWS EC2 information has been saved in '\
+                f'{os.path.dirname(os.path.abspath(__file__))}'\
+                f'/ec2_info.json\n'
 
-    saved_file_message = colored(
-        "\n\u2714 ", 
-        "green"
-    ) + \
-        f'Your AWS EC2 information has been saved in '\
-        f'{os.path.dirname(os.path.abspath(__file__))}'\
-        f'/ec2_info.json\n'
+            spinner.stop()
 
     print(saved_file_message)
 
