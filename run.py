@@ -375,36 +375,108 @@ def parse_cli_arguments():
     return parser.parse_args()
 
 
+def get_task():
+    task = input(
+        f'\nWhat would you like to do:\n'
+        f'1) Get EC2 instance information\n'
+        f'2) Enable detailed monitoring of an instance\n'
+        f'3) Disable detailed monitoring of an instance\n'
+        f'4) Start an instance\n'
+        f'5) Stop an instance\n'
+        f'6) Reboot an instance\n'
+        f'7) Quit\n\n'
+        f'Your choice: '
+    )
+
+    unicode_chars = '\n\u2718 '
+    error_message = f'{colored(unicode_chars, "red")}'\
+                    f'Invalid Input'
+
+    if task.isdigit():
+        if int(task) not in range(1,8):
+            print(error_message)
+            return False
+
+    else:
+        print(error_message)
+        return False
+
+    return task
+
+
 def main():
-    args = parse_cli_arguments()
+    try:
+        args = parse_cli_arguments()
 
-    if args.info:
-        status = get_ec2_info()
+        if 'True' not in str(args):
+            quit = False
 
-    if args.monitor:
-        instance_id = input('Enter the AWS EC2 instance ID: ')
-        status = enable_monitoring(instance_id)
+            while not quit:
+                task = int(get_task())
 
-    if args.unmonitor:
-        instance_id = input('Enter the AWS EC2 instance ID: ')
-        status = disable_monitoring(instance_id)
+                if task:
+                    if task != 1 and task != 7:
+                        instance_id = input('Enter the AWS EC2 instance ID: ')
 
-    if args.start:
-        instance_id = input('Enter the AWS EC2 instance ID: ')
-        status = start_instance(instance_id)
+                    if task == 1:
+                        status = get_ec2_info()
 
-    if args.stop:
-        instance_id = input('Enter the AWS EC2 instance ID: ')
-        status = stop_instance(instance_id)
+                    if task == 2:
+                        status = enable_monitoring(instance_id)
 
-    if args.reboot:
-        instance_id = input('Enter the AWS EC2 instance ID: ')
-        status = reboot_instance(instance_id)
+                    if task == 3:
+                        status = disable_monitoring(instance_id)
 
-    if not status:
-        exit(1)
+                    if task == 4:
+                        status = start_instance(instance_id)
 
-    exit(0)
+                    if task == 5:
+                        status = status = stop_instance(instance_id)
+
+                    if task == 6:
+                        status = reboot_instance(instance_id)
+
+                    if task != 7:
+                        if not status:
+                            exit(1)
+
+                    if task == 7:
+                        quit = True
+
+            print('\nGoodbye\n')
+            exit(0)
+
+        if args.info:
+            status = get_ec2_info()
+
+        if args.monitor:
+            instance_id = input('Enter the AWS EC2 instance ID: ')
+            status = enable_monitoring(instance_id)
+
+        if args.unmonitor:
+            instance_id = input('Enter the AWS EC2 instance ID: ')
+            status = disable_monitoring(instance_id)
+
+        if args.start:
+            instance_id = input('Enter the AWS EC2 instance ID: ')
+            status = start_instance(instance_id)
+
+        if args.stop:
+            instance_id = input('Enter the AWS EC2 instance ID: ')
+            status = stop_instance(instance_id)
+
+        if args.reboot:
+            instance_id = input('Enter the AWS EC2 instance ID: ')
+            status = reboot_instance(instance_id)
+
+        if not status:
+            exit(1)
+
+        exit(0)
+
+    except KeyboardInterrupt:
+        print('\n\nGoodbye\n')
+        exit(0)
 
 
 if __name__ == '__main__':
