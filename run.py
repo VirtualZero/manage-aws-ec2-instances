@@ -23,9 +23,7 @@ script_directory = os.path.dirname(
 )
 
 
-def reboot_instance():
-    instance_id = input('Enter the AWS EC2 instance ID: ')
-
+def reboot_instance(instance_id):
     with Halo(
         text='Stopping Instance...',
         spinner='dots',
@@ -48,6 +46,8 @@ def reboot_instance():
                 f'is rebooting.\n'
             )
 
+            return True
+
         except ClientError as e:
             spinner.stop()
             if 'IncorrectState' in str(e):
@@ -56,11 +56,11 @@ def reboot_instance():
                     f'{colored(unicode_chars, "red")}'\
                     f'Instance is stopped, cannot reboot.\n'
                 )
+
+            return False
         
 
-def stop_instance():
-    instance_id = input('Enter the AWS EC2 instance ID: ')
-
+def stop_instance(instance_id):
     with Halo(
         text='Stopping Instance...',
         spinner='dots',
@@ -89,11 +89,15 @@ def stop_instance():
                 status_message
             )
 
+            return True
+
         else:
             unicode_chars = '\n\u2718 '
             print(
                 f'{unicode_chars} Something went wrong, try again.'
             )
+
+            return False
 
 
 def write_to_log(log_name, response, status_message):
@@ -126,9 +130,7 @@ def write_to_log(log_name, response, status_message):
         return True
 
 
-def start_instance():
-    instance_id = input('Enter the AWS EC2 instance ID: ')
-
+def start_instance(instance_id):
     with Halo(
         text='Starting Instance...',
         spinner='dots',
@@ -157,11 +159,15 @@ def start_instance():
                 status_message
             )
 
+            return True
+
         else:
             unicode_chars = '\n\u2718 '
             print(
                 f'{unicode_chars} Something went wrong, try again.'
             )
+
+            return False
 
 
 def check_for_log(log_name):
@@ -171,9 +177,7 @@ def check_for_log(log_name):
     return True
 
 
-def enable_monitoring():
-    instance_id = input('Enter the AWS EC2 instance ID: ')
-
+def enable_monitoring(instance_id):
     with Halo(
         text='Enabling Detailed Instance Monitoring...',
         spinner='dots',
@@ -201,16 +205,18 @@ def enable_monitoring():
                 status_message
             )
 
+            return True
+
         else:
             unicode_chars = '\n\u2718 '
             print(
                 f'{unicode_chars} Something went wrong, try again.'
             )
 
+            return False
 
-def disable_monitoring():
-    instance_id = input('Enter the AWS EC2 instance ID: ')
 
+def disable_monitoring(instance_id):
     with Halo(
         text='Disabling Detailed Instance Monitoring...',
         spinner='dots',
@@ -238,11 +244,15 @@ def disable_monitoring():
             status_message
         )
 
+        return True
+
     else:
         unicode_chars = '\n\u2718 '
         print(
             f'{unicode_chars} Something went wrong, try again.'
         )
+
+        return False
 
 
 def get_ec2_info():
@@ -281,21 +291,24 @@ def parse_cli_arguments():
     parser.add_argument(
         '-i',
         '--info',
-        help='Retrieves and displays information about your AWS EC2 instances',
+        help=f'Retrieves and saves information '\
+             f'about your AWS EC2 instances',
         action='store_true'
     )
 
     parser.add_argument(
         '-m',
         '--monitor',
-        help='Enables detailed monitoring of an AWS EC2 instance',
+        help=f'Enables detailed monitoring of an AWS '\
+             f'EC2 instance',
         action='store_true'
     )
 
     parser.add_argument(
         '-u',
         '--unmonitor',
-        help='Disables detailed monitoring of an AWS EC2 instance',
+        help=f'Disables detailed monitoring of an '
+             f'AWS EC2 instance',
         action='store_true'
     )
 
@@ -326,23 +339,30 @@ def parse_cli_arguments():
 def main():
     args = parse_cli_arguments()
 
+    instance_id = input('Enter the AWS EC2 instance ID: ')
+
     if args.info:
-        get_ec2_info()
+        status = get_ec2_info()
 
     if args.monitor:
-        enable_monitoring()
+        status = enable_monitoring(instance_id)
 
     if args.unmonitor:
-        disable_monitoring()
+        status = disable_monitoring(instance_id)
 
     if args.start:
-        start_instance()
+        status = start_instance(instance_id)
 
     if args.stop:
-        stop_instance()
+        status = stop_instance(instance_id)
 
     if args.reboot:
-        reboot_instance()
+        status = reboot_instance(instance_id)
+
+    if not status:
+        exit(1)
+
+    exit(0)
 
 
 if __name__ == '__main__':
