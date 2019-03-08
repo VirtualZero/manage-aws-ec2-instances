@@ -5,6 +5,7 @@ from halo import Halo
 import os
 from termcolor import colored
 import datetime
+from botocore.exceptions import ClientError
 
 
 ec2 = boto3.client(
@@ -19,6 +20,41 @@ script_directory = os.path.dirname(
 )
 
 
+def reboot_instance():
+    instance_id = input('Enter the AWS EC2 instance ID: ')
+
+    with Halo(
+        text='Stopping Instance...',
+        spinner='dots',
+        text_color='white',
+        color='green'
+    ) as spinner:
+        
+        try:
+            ec2.reboot_instances(
+                InstanceIds=[instance_id],
+                DryRun=False
+            )
+
+            spinner.stop()
+
+            unicode_chars = '\n\u2714 '
+            print(
+                f'{colored(unicode_chars, "green")}'
+                f'AWS EC2 instance {instance_id} '\
+                f'is rebooting.\n'
+            )
+
+        except ClientError as e:
+            spinner.stop()
+            if 'IncorrectState' in str(e):
+                unicode_chars = '\n\u2718 '
+                print(
+                    f'{colored(unicode_chars, "red")}'\
+                    f'Instance is stopped, cannot reboot.\n'
+                )
+        
+
 def stop_instance():
     instance_id = input('Enter the AWS EC2 instance ID: ')
 
@@ -32,8 +68,6 @@ def stop_instance():
             InstanceIds=[instance_id],
             DryRun=False
         )
-
-        print(response)
 
         if "'stopping'" in str(response) or\
            "'stopped'" in str(response):
@@ -276,6 +310,13 @@ def parse_cli_arguments():
         action='store_true'
     )
 
+    parser.add_argument(
+        '-r',
+        '--reboot',
+        help='Reboots an AWS EC2 instance',
+        action='store_true'
+    )
+
     return parser.parse_args()
 
 
@@ -296,6 +337,9 @@ def main():
 
     if args.stop:
         stop_instance()
+
+    if args.reboot:
+        reboot_instance()
 
 
 if __name__ == '__main__':
