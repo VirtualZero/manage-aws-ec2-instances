@@ -7,6 +7,7 @@ from termcolor import colored
 import datetime
 from botocore.exceptions import ClientError
 from settings import get_settings
+import re
 
 
 settings = get_settings()
@@ -26,20 +27,17 @@ script_directory = os.path.dirname(
 def handle_ec2_errors(e):
     error = str(e)
 
-    if 'AuthFailure' in error:
-        unicode_chars = '\n\u2718 '
-        print(
-            f'{colored(unicode_chars, "red")}'
-            f'Authentication Failure.\n'
-        )
+    unicode_chars = '\n\u2718 '
+    print(
+        f'{colored(unicode_chars, "red")}'
+        f'{error}\n'
+    )
 
-    if 'IncorrectState' in error:
-        unicode_chars = '\n\u2718 '
-        print(
-            f'{colored(unicode_chars, "red")}'
-            f'Task Failure: The instance is '\
-            f'in an incorrect state.\n'
-        )
+    write_to_log(
+        'error',
+        error,
+        ''    
+    )
 
     exit(1)
 
@@ -97,7 +95,6 @@ def stop_instance(instance_id):
                     f'start/stop event is located in '\
                     f'{script_directory}/instance_state.log\n'
 
-                check_for_log('instance_state')
                 spinner.stop()
                 write_to_log(
                     'instance_state',
@@ -121,6 +118,7 @@ def stop_instance(instance_id):
 
 
 def write_to_log(log_name, response, status_message):
+    check_for_log(log_name)
     with open(f'{log_name}.log', 'r+') as log:
         log_entry_time = datetime.datetime.now().strftime(
             '%A, %D %I:%M %p'
@@ -145,7 +143,8 @@ def write_to_log(log_name, response, status_message):
             updated_log_content
         )
 
-        print(status_message)
+        if status_message:
+            print(status_message)
 
         return True
 
@@ -157,7 +156,7 @@ def start_instance(instance_id):
         text_color='white',
         color='green'
     ) as spinner:
-    
+
         try:
             response = ec2.start_instances(
                 InstanceIds=[instance_id], 
@@ -173,7 +172,6 @@ def start_instance(instance_id):
                     f'start/stop event is located in '\
                     f'{script_directory}/instance_state.log\n'
 
-                check_for_log('instance_state')
                 spinner.stop()
                 write_to_log(
                     'instance_state',
@@ -225,7 +223,6 @@ def enable_monitoring(instance_id):
                     f'monitoring event is located in '\
                     f'{script_directory}/monitoring.log\n'
 
-                check_for_log('monitoring')
                 spinner.stop()
                 write_to_log(
                     'monitoring', 
@@ -270,7 +267,6 @@ def disable_monitoring(instance_id):
                     f'monitoring event is located in '\
                     f'{script_directory}/monitoring.log\n'
 
-                check_for_log('monitoring')
                 spinner.stop()
                 write_to_log(
                     'monitoring',
