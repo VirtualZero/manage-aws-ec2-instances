@@ -23,6 +23,27 @@ script_directory = os.path.dirname(
 )
 
 
+def handle_ec2_errors(e):
+    error = str(e)
+
+    if 'AuthFailure' in error:
+        unicode_chars = '\n\u2718 '
+        print(
+            f'{colored(unicode_chars, "red")}'
+            f'Authentication Failure.\n'
+        )
+
+    if 'IncorrectState' in error:
+        unicode_chars = '\n\u2718 '
+        print(
+            f'{colored(unicode_chars, "red")}'
+            f'Task Failure: The instance is '\
+            f'in an incorrect state.\n'
+        )
+
+    exit(1)
+
+
 def reboot_instance(instance_id):
     with Halo(
         text='Stopping Instance...',
@@ -50,14 +71,7 @@ def reboot_instance(instance_id):
 
         except ClientError as e:
             spinner.stop()
-            if 'IncorrectState' in str(e):
-                unicode_chars = '\n\u2718 '
-                print(
-                    f'{colored(unicode_chars, "red")}'\
-                    f'Instance is stopped, cannot reboot.\n'
-                )
-
-            return False
+            handle_ec2_errors(e)
         
 
 def stop_instance(instance_id):
@@ -67,37 +81,43 @@ def stop_instance(instance_id):
         text_color='white',
         color='green'
     ) as spinner:
-        response = ec2.stop_instances(
-            InstanceIds=[instance_id],
-            DryRun=False
-        )
 
-        if "'stopping'" in str(response) or\
-           "'stopped'" in str(response):
-            unicode_chars = '\n\u2714 '
-            status_message = f'{colored(unicode_chars, "green")}'\
-                f'AWS EC2 instance {instance_id} is '\
-                f'stopped. Meta data about every '\
-                f'start/stop event is located in '\
-                f'{script_directory}/instance_state.log\n'
+        try:
+            response = ec2.stop_instances(
+                InstanceIds=[instance_id],
+                DryRun=False
+            )
 
-            check_for_log('instance_state')
+            if "'stopping'" in str(response) or\
+            "'stopped'" in str(response):
+                unicode_chars = '\n\u2714 '
+                status_message = f'{colored(unicode_chars, "green")}'\
+                    f'AWS EC2 instance {instance_id} is '\
+                    f'stopped. Meta data about every '\
+                    f'start/stop event is located in '\
+                    f'{script_directory}/instance_state.log\n'
+
+                check_for_log('instance_state')
+                spinner.stop()
+                write_to_log(
+                    'instance_state',
+                    response,
+                    status_message
+                )
+
+                return True
+
+            else:
+                unicode_chars = '\n\u2718 '
+                print(
+                    f'{unicode_chars} Something went wrong, try again.'
+                )
+
+                return False
+
+        except ClientError as e:
             spinner.stop()
-            write_to_log(
-                'instance_state',
-                response,
-                status_message
-            )
-
-            return True
-
-        else:
-            unicode_chars = '\n\u2718 '
-            print(
-                f'{unicode_chars} Something went wrong, try again.'
-            )
-
-            return False
+            handle_ec2_errors(e)
 
 
 def write_to_log(log_name, response, status_message):
@@ -137,37 +157,43 @@ def start_instance(instance_id):
         text_color='white',
         color='green'
     ) as spinner:
-        response = ec2.start_instances(
-            InstanceIds=[instance_id], 
-            DryRun=False
-        )
+    
+        try:
+            response = ec2.start_instances(
+                InstanceIds=[instance_id], 
+                DryRun=False
+            )
 
-        if "'pending'" in str(response) or\
-           "'running'" in str(response):
-            unicode_chars = '\n\u2714 '
-            status_message = f'{colored(unicode_chars, "green")}'\
-                f'AWS EC2 instance {instance_id} is '\
-                f'started. Meta data about every '\
-                f'start/stop event is located in '\
-                f'{script_directory}/instance_state.log\n'
+            if "'pending'" in str(response) or\
+            "'running'" in str(response):
+                unicode_chars = '\n\u2714 '
+                status_message = f'{colored(unicode_chars, "green")}'\
+                    f'AWS EC2 instance {instance_id} is '\
+                    f'started. Meta data about every '\
+                    f'start/stop event is located in '\
+                    f'{script_directory}/instance_state.log\n'
 
-            check_for_log('instance_state')
+                check_for_log('instance_state')
+                spinner.stop()
+                write_to_log(
+                    'instance_state',
+                    response, 
+                    status_message
+                )
+
+                return True
+
+            else:
+                unicode_chars = '\n\u2718 '
+                print(
+                    f'{unicode_chars} Something went wrong, try again.'
+                )
+
+                return False
+
+        except ClientError as e:
             spinner.stop()
-            write_to_log(
-                'instance_state',
-                response, 
-                status_message
-            )
-
-            return True
-
-        else:
-            unicode_chars = '\n\u2718 '
-            print(
-                f'{unicode_chars} Something went wrong, try again.'
-            )
-
-            return False
+            handle_ec2_errors(e)
 
 
 def check_for_log(log_name):
@@ -184,36 +210,42 @@ def enable_monitoring(instance_id):
         text_color='white',
         color='green'
     ) as spinner:
-        response = ec2.monitor_instances(
-            InstanceIds=[instance_id]
-        )
 
-        if "'enabled'" in str(response) or\
-           "'pending'" in str(response):
-            unicode_chars = '\n\u2714 '
-            status_message = f'{colored(unicode_chars, "green")}'\
-                f'Detailed monitoring of AWS EC2 instance '\
-                f'{instance_id} is enabled. Meta data about every '\
-                f'monitoring event is located in '\
-                f'{script_directory}/monitoring.log\n'
+        try:
+            response = ec2.monitor_instances(
+                InstanceIds=[instance_id]
+            )
 
-            check_for_log('monitoring')
+            if "'enabled'" in str(response) or\
+               "'pending'" in str(response):
+                unicode_chars = '\n\u2714 '
+                status_message = f'{colored(unicode_chars, "green")}'\
+                    f'Detailed monitoring of AWS EC2 instance '\
+                    f'{instance_id} is enabled. Meta data about every '\
+                    f'monitoring event is located in '\
+                    f'{script_directory}/monitoring.log\n'
+
+                check_for_log('monitoring')
+                spinner.stop()
+                write_to_log(
+                    'monitoring', 
+                    response, 
+                    status_message
+                )
+
+                return True
+
+            else:
+                unicode_chars = '\n\u2718 '
+                print(
+                    f'{unicode_chars} Something went wrong, try again.'
+                )
+
+                return False
+
+        except ClientError as e:
             spinner.stop()
-            write_to_log(
-                'monitoring', 
-                response, 
-                status_message
-            )
-
-            return True
-
-        else:
-            unicode_chars = '\n\u2718 '
-            print(
-                f'{unicode_chars} Something went wrong, try again.'
-            )
-
-            return False
+            handle_ec2_errors(e)
 
 
 def disable_monitoring(instance_id):
@@ -223,36 +255,42 @@ def disable_monitoring(instance_id):
         text_color='white',
         color='green'
     ) as spinner:
-        response = ec2.unmonitor_instances(
-            InstanceIds=[instance_id]
-        )
 
-    if "'disabling'" in str(response) or\
-       "'disabled'" in str(response):
-        unicode_chars = '\n\u2714 '
-        status_message = f'{colored(unicode_chars, "green")}'\
-            f'Detailed monitoring of AWS EC2 instance '\
-            f'{instance_id} is disabled. Meta data about every '\
-            f'monitoring event is located in '\
-            f'{script_directory}/monitoring.log\n'
-        
-        check_for_log('monitoring')
-        spinner.stop()
-        write_to_log(
-            'monitoring',
-            response, 
-            status_message
-        )
+        try:
+            response = ec2.unmonitor_instances(
+                InstanceIds=[instance_id]
+            )
 
-        return True
+            if "'disabling'" in str(response) or\
+               "'disabled'" in str(response):
+                unicode_chars = '\n\u2714 '
+                status_message = f'{colored(unicode_chars, "green")}'\
+                    f'Detailed monitoring of AWS EC2 instance '\
+                    f'{instance_id} is disabled. Meta data about every '\
+                    f'monitoring event is located in '\
+                    f'{script_directory}/monitoring.log\n'
 
-    else:
-        unicode_chars = '\n\u2718 '
-        print(
-            f'{unicode_chars} Something went wrong, try again.'
-        )
+                check_for_log('monitoring')
+                spinner.stop()
+                write_to_log(
+                    'monitoring',
+                    response,
+                    status_message
+                )
 
-        return False
+            else:
+                unicode_chars = '\n\u2718 '
+                print(
+                    f'{unicode_chars} Something went wrong, try again.'
+                )
+
+                return False
+
+            return True
+
+        except ClientError as e:
+            spinner.stop()
+            handle_ec2_errors(e)
 
 
 def get_ec2_info():
