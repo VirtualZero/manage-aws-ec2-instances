@@ -6,13 +6,16 @@ import os
 from termcolor import colored
 import datetime
 from botocore.exceptions import ClientError
+from settings import get_settings
 
+
+settings = get_settings()
 
 ec2 = boto3.client(
     'ec2',
-    region_name='us-east-2',
-    aws_access_key_id='YOUR_ACCESS_KEY',
-    aws_secret_access_key='YOUR_SECRET_KEY'
+    region_name=settings['aws_ec2_region_name'],
+    aws_access_key_id=settings['aws_access_key_id'],
+    aws_secret_access_key=settings['aws_secret_access_key']
 )
 
 script_directory = os.path.dirname(
