@@ -24,7 +24,7 @@ script_directory = os.path.dirname(
 )
 
 
-def handle_ec2_errors(e):
+def handle_ec2_errors(e, flags):
     error = str(e)
 
     unicode_chars = '\n\u2718 '
@@ -39,7 +39,10 @@ def handle_ec2_errors(e):
         ''    
     )
 
-    exit(1)
+    if flags:
+        exit(1)
+
+    return 'ec2_error'
 
 
 def reboot_instance(instance_id):
@@ -149,7 +152,7 @@ def write_to_log(log_name, response, status_message):
         return True
 
 
-def start_instance(instance_id):
+def start_instance(instance_id, flags):
     with Halo(
         text='Starting Instance...',
         spinner='dots',
@@ -191,7 +194,7 @@ def start_instance(instance_id):
 
         except ClientError as e:
             spinner.stop()
-            handle_ec2_errors(e)
+            return handle_ec2_errors(e, flags)
 
 
 def check_for_log(log_name):
@@ -201,7 +204,7 @@ def check_for_log(log_name):
     return True
 
 
-def enable_monitoring(instance_id):
+def enable_monitoring(instance_id, flags):
     with Halo(
         text='Enabling Detailed Instance Monitoring...',
         spinner='dots',
@@ -242,10 +245,10 @@ def enable_monitoring(instance_id):
 
         except ClientError as e:
             spinner.stop()
-            handle_ec2_errors(e)
+            return handle_ec2_errors(e, flags)
 
 
-def disable_monitoring(instance_id):
+def disable_monitoring(instance_id, flags):
     with Halo(
         text='Disabling Detailed Instance Monitoring...',
         spinner='dots',
@@ -286,10 +289,10 @@ def disable_monitoring(instance_id):
 
         except ClientError as e:
             spinner.stop()
-            handle_ec2_errors(e)
+            return handle_ec2_errors(e, flags)
 
 
-def get_ec2_info():
+def get_ec2_info(flags):
     with Halo(
         text='Requesting EC2 Information...',
         spinner='dots',
@@ -318,7 +321,7 @@ def get_ec2_info():
 
             except ClientError as e:
                 spinner.stop()
-                handle_ec2_errors(e)
+                return handle_ec2_errors(e, flags)
 
     print(saved_file_message)
 
@@ -413,22 +416,23 @@ def main():
 
             while not quit:
                 task = int(get_task())
+                flags = False
 
                 if task:
                     if task != 1 and task != 7:
                         instance_id = input('Enter the AWS EC2 instance ID: ')
 
                     if task == 1:
-                        status = get_ec2_info()
+                        status = get_ec2_info(flags)
 
                     if task == 2:
-                        status = enable_monitoring(instance_id)
+                        status = enable_monitoring(instance_id, flags)
 
                     if task == 3:
-                        status = disable_monitoring(instance_id)
+                        status = disable_monitoring(instance_id, flags)
 
                     if task == 4:
-                        status = start_instance(instance_id)
+                        status = start_instance(instance_id, flags)
 
                     if task == 5:
                         status = status = stop_instance(instance_id)
@@ -446,16 +450,18 @@ def main():
             print('\nGoodbye\n')
             exit(0)
 
+        flags = True
+
         if args.info:
-            status = get_ec2_info()
+            status = get_ec2_info(flags)
 
         if args.monitor:
             instance_id = input('Enter the AWS EC2 instance ID: ')
-            status = enable_monitoring(instance_id)
+            status = enable_monitoring(instance_id, flags)
 
         if args.unmonitor:
             instance_id = input('Enter the AWS EC2 instance ID: ')
-            status = disable_monitoring(instance_id)
+            status = disable_monitoring(instance_id, flags)
 
         if args.start:
             instance_id = input('Enter the AWS EC2 instance ID: ')

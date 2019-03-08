@@ -9,7 +9,9 @@ Manage AWS EC2 Instances is a Python script that provides the ability to manage 
   - Reboot instances
   - Logging
 
-Manage AWS EC2 Instances can be executed with or without arguments. When executed without arguments, tasks are chosen from a prompt. Availabe command line arguments are:
+Manage AWS EC2 Instances can be executed with or without arguments. When executed without arguments, tasks are chosen from a prompt and the script will loop 
+until 'Quit' is chosen from the menu or CTRL + C is entered. When the script is executed with arguments, the task specified with the argument 
+will be performed and the script will exit. Availabe command line arguments are:
 
   - -i, --info | Retrieves information about EC2 Instances
   - -m, --monitor | Enables detailed monitoring of EC2 instances
