@@ -298,22 +298,27 @@ def get_ec2_info():
     ) as spinner:
 
         with open('ec2_info.json', 'w') as info_file:
-            info_file.write(
-                json.dumps(
-                    ec2.describe_instances(),
-                    indent=4,
-                    sort_keys=True,
-                    default=str
+            try:
+                info_file.write(
+                    json.dumps(
+                        ec2.describe_instances(),
+                        indent=4,
+                        sort_keys=True,
+                        default=str
+                    )
                 )
-            )
 
-            unicode_chars = '\n\u2714 '
-            saved_file_message = f'{colored(unicode_chars, "green")}'\
-                f'Your AWS EC2 information has been saved in '\
-                f'{os.path.dirname(os.path.abspath(__file__))}'\
-                f'/ec2_info.json\n'
+                unicode_chars = '\n\u2714 '
+                saved_file_message = f'{colored(unicode_chars, "green")}'\
+                    f'Your AWS EC2 information has been saved in '\
+                    f'{os.path.dirname(os.path.abspath(__file__))}'\
+                    f'/ec2_info.json\n'
 
-            spinner.stop()
+                spinner.stop()
+
+            except ClientError as e:
+                spinner.stop()
+                handle_ec2_errors(e)
 
     print(saved_file_message)
 
@@ -373,24 +378,27 @@ def parse_cli_arguments():
 def main():
     args = parse_cli_arguments()
 
-    instance_id = input('Enter the AWS EC2 instance ID: ')
-
     if args.info:
         status = get_ec2_info()
 
     if args.monitor:
+        instance_id = input('Enter the AWS EC2 instance ID: ')
         status = enable_monitoring(instance_id)
 
     if args.unmonitor:
+        instance_id = input('Enter the AWS EC2 instance ID: ')
         status = disable_monitoring(instance_id)
 
     if args.start:
+        instance_id = input('Enter the AWS EC2 instance ID: ')
         status = start_instance(instance_id)
 
     if args.stop:
+        instance_id = input('Enter the AWS EC2 instance ID: ')
         status = stop_instance(instance_id)
 
     if args.reboot:
+        instance_id = input('Enter the AWS EC2 instance ID: ')
         status = reboot_instance(instance_id)
 
     if not status:
