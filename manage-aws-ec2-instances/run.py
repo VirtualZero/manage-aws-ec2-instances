@@ -45,7 +45,7 @@ def handle_ec2_errors(e, flags):
     return 'ec2_error'
 
 
-def reboot_instance(instance_id):
+def reboot_instance(instance_id, flags):
     with Halo(
         text='Stopping Instance...',
         spinner='dots',
@@ -72,10 +72,10 @@ def reboot_instance(instance_id):
 
         except ClientError as e:
             spinner.stop()
-            handle_ec2_errors(e)
+            handle_ec2_errors(e, flags)
         
 
-def stop_instance(instance_id):
+def stop_instance(instance_id, flags):
     with Halo(
         text='Stopping Instance...',
         spinner='dots',
@@ -117,7 +117,7 @@ def stop_instance(instance_id):
 
         except ClientError as e:
             spinner.stop()
-            handle_ec2_errors(e)
+            handle_ec2_errors(e, flags)
 
 
 def write_to_log(log_name, response, status_message):
@@ -435,10 +435,10 @@ def main():
                         status = start_instance(instance_id, flags)
 
                     if task == 5:
-                        status = status = stop_instance(instance_id)
+                        status = status = stop_instance(instance_id, flags)
 
                     if task == 6:
-                        status = reboot_instance(instance_id)
+                        status = reboot_instance(instance_id, flags)
 
                     if task != 7:
                         if not status:
@@ -465,15 +465,15 @@ def main():
 
         if args.start:
             instance_id = input('Enter the AWS EC2 instance ID: ')
-            status = start_instance(instance_id)
+            status = start_instance(instance_id, flags)
 
         if args.stop:
             instance_id = input('Enter the AWS EC2 instance ID: ')
-            status = stop_instance(instance_id)
+            status = stop_instance(instance_id, flags)
 
         if args.reboot:
             instance_id = input('Enter the AWS EC2 instance ID: ')
-            status = reboot_instance(instance_id)
+            status = reboot_instance(instance_id, flags)
 
         if not status:
             exit(1)
